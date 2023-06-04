@@ -1,11 +1,11 @@
 import sys
 
 import mysql.connector
-from PyQt5 import QtGui, QtCore, Qt
+from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableWidget, QApplication, QTableWidgetItem, QLabel, \
     QLineEdit, QSizePolicy, QMessageBox
-
 from translate import Translator
+
 from secrets import secrets
 
 # Hole Parameter für Connection
@@ -50,20 +50,19 @@ class TableDisplay(QWidget):
         button_clear = QPushButton("Eingabe löschen")
         button_clear.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         layout.addWidget(button_clear)
-        button_clear.clicked.connect(self.clear_table)
+        button_clear.clicked.connect(self.clear_command)
 
         # Ein Table Widget erzeugen
         self.table_widget = QTableWidget()
         layout.addWidget(self.table_widget)
         self.setLayout(layout)
 
-    def clear_table(self):
+    def clear_command(self):
         self.sql_line.clear()
 
     def display_table(self):
-        # Tabelleninhalt löschen
+        # Alten Tabelleninhalt löschen
         self.table_widget.clear()
-
         try:
             # Verbindung zur MySQL Datenbank aufbauen
             db = mysql.connector.connect(
@@ -80,6 +79,7 @@ class TableDisplay(QWidget):
             except mysql.connector.Error as error:
                 self.show_message(error)
                 print("Fehler beim Ausführen des SQL Statements")
+
             # Zahl der Zeilen und Spalten ermitteln
             else:
                 num_rows = len(data)
@@ -87,13 +87,10 @@ class TableDisplay(QWidget):
                 self.table_widget.setRowCount(num_rows)
                 self.table_widget.setColumnCount(num_cols)
                 # Tabelle mit Daten füllen
-                table_row = 0
-                for row in data:
-                    self.table_widget.setItem(table_row, 0, QTableWidgetItem(str(row[0])))
-                    self.table_widget.setItem(table_row, 1, QTableWidgetItem(row[1]))
-                    self.table_widget.setItem(table_row, 2, QTableWidgetItem(row[2]))
-                    self.table_widget.setItem(table_row, 3, QTableWidgetItem(str(row[3])))
-                    table_row += 1
+                for i, row in enumerate(data):
+                    for j, value in enumerate(row):
+                        item = QTableWidgetItem(str(value))
+                        self.table_widget.setItem(i, j, item)
                 print("SQL Statement erfolgreich durchgeführt")
         except mysql.connector.Error as error:
             self.show_message(error)
@@ -105,7 +102,7 @@ class TableDisplay(QWidget):
 
     def show_message(self, error):
         msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setIcon(QMessageBox.Icon.Warning)
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.setWindowTitle("Fehlermeldung")
         translator = Translator(to_lang="de-CH-1996")
@@ -114,9 +111,21 @@ class TableDisplay(QWidget):
         msg.exec()
 
 
+def show_program_info():
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Icon.Information)
+    msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+    msg.setWindowTitle("Information")
+    msg.setStyleSheet("background-color: rgb(255,255,204);")
+    msg.setText("Programm zur Ausführung von SQL Kommandos")
+    msg.setInformativeText("BSc BAI Projekt 1, WS 2023/24")
+    msg.exec()
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = TableDisplay()
     window.resize(600, 600)
     window.show()
+    show_program_info()
     sys.exit(app.exec_())
